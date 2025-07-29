@@ -6,9 +6,9 @@ const EXPRESS_BASE_URL = "http://localhost:3001";
 const FASTIFY_BASE_URL = "http://localhost:3002";
 
 // Configurações de teste mais granulares para insights valiosos
-const DURATIONS = [15, 30, 60] as const; // Teste progressivo de sustentabilidade
-const CONNECTIONS = [10, 50, 100, 250, 500] as const; // Análise de escalabilidade
-const TEST_VARIANTS = ["basic", "complex", "heavy"] as const; // Diferentes complexidades
+const DURATIONS = [20, 60] as const; // Teste progressivo de sustentabilidade
+const CONNECTIONS = [10, 100, 250] as const; // Análise de escalabilidade
+const TEST_VARIANTS = ["basic", "complex"] as const; // Diferentes complexidades
 
 const IMPLEMENTATIONS = [
   { name: "Express", route: "/api/express", baseUrl: EXPRESS_BASE_URL },
@@ -26,7 +26,8 @@ const TEST_SCENARIOS = [
     breakingPoint: 400, // Conexões onde performance degrada
     optimalConnections: 100,
   },
-  {
+
+/*  {
     name: "file_upload",
     description: "Upload de arquivos",
     payloadSize: "large" as const,
@@ -44,7 +45,7 @@ const TEST_SCENARIOS = [
     breakingPoint: 100,
     optimalConnections: 25,
   },
-  {
+   {
     name: "product_catalog",
     description: "Catálogo de produtos",
     payloadSize: "medium" as const,
@@ -61,7 +62,7 @@ const TEST_SCENARIOS = [
     cacheable: false,
     breakingPoint: 500,
     optimalConnections: 200,
-  },
+  }, */
 ];
 
 type BenchmarkResult = {
