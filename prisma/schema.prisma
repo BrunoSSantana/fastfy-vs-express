@@ -10,7 +10,7 @@ datasource db {
 // Modelo para cenário user_crud
 model User {
   id          String   @id @default(uuid())
-  email       String   @unique
+  email       String
   name        String
   phone       String?
   street      String?
