@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// Modelo para cenário user_crud
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  name        String
+  phone       String?
+  street      String?
+  city        String?
+  zipCode     String?
+  country     String   @default("Brasil")
+  language    String   @default("pt-BR")
+  timezone    String   @default("America/Sao_Paulo")
+  notifications Boolean @default(true)
+  theme       String   @default("light")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  analytics   Analytics[]
+  fileUploads FileUpload[]
+
+  @@map("users")
+}
+
+// Modelo para cenário file_upload
+model FileUpload {
+  id          String   @id @default(uuid())
+  filename    String
+  originalName String
+  size        Int
+  mimeType    String
+  checksum    String
+  uploadedBy  String
+  tags        String   // JSON string para tags
+  description String?
+  createdAt   DateTime @default(now())
+
+  // Relacionamentos
+  user   User           @relation(fields: [uploadedBy], references: [id])
+  chunks FileChunk[]
+
+  @@map("file_uploads")
+}
+
+model FileChunk {
+  id         String @id @default(uuid())
+  fileId     String
+  index      Int
+  data       String // Base64 ou referência
+  checksum   String
+  createdAt  DateTime @default(now())
+
+  // Relacionamentos
+  file FileUpload @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@map("file_chunks")
+}
+
+// Modelo para cenário analytics_processing
+model Analytics {
+  id        String   @id @default(uuid())
+  sessionId String
+  userId    String?
+  events    String   // JSON serializado dos eventos
+  userProps String   // JSON serializado das propriedades do usuário
+  createdAt DateTime @default(now())
+
+  // Relacionamentos
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("analytics")
+}
+
+// Modelo para cenário product_catalog
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  category    String
+  brand       String
+  inStock     Boolean  @default(true)
+  rating      Float    @default(0)
+  imageUrl    String?
+  tags        String   @default("[]") // JSON string para tags
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("products")
+}
+
+// Modelo para cenário real_time_data (IoT/sensores)
+model Sensor {
+  id               String   @id @default(uuid())
+  type             String   // temperature, humidity, pressure, etc.
+  value            Float
+  unit             String
+  latitude         Float?
+  longitude        Float?
+  batteryLevel     Int      @default(100)
+  lastMaintenance  DateTime
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relacionamentos
+  readings SensorReading[]
+
+  @@map("sensors")
+}
+
+model SensorReading {
+  id        String   @id @default(uuid())
+  sensorId  String
+  value     Float
+  timestamp DateTime @default(now())
+  metadata  String?  // JSON para dados extras
+
+  // Relacionamentos
+  sensor Sensor @relation(fields: [sensorId], references: [id], onDelete: Cascade)
+
+  @@map("sensor_readings")
+} 
