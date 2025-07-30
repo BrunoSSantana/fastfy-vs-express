@@ -4,7 +4,7 @@ import Fastify from 'fastify';
 import { PrismaClient } from '@prisma/client';
 
 const fastify = Fastify({
-    logger: {
+/*     logger: {
         level: 'info',
         transport: {
             target: 'pino-pretty',
@@ -12,7 +12,7 @@ const fastify = Fastify({
                 colorize: true
             }
         }
-    }
+    } */
 });
 
 const prisma = new PrismaClient()
@@ -64,12 +64,12 @@ fastify.addHook('onResponse', async (request: any, reply) => {
 });
 
 // Utilidade para simular processamento CPU-intensivo
-function simulateProcessing(duration: number = 10) {
+/* function simulateProcessing(duration: number = 10) {
     const start = Date.now();
     while (Date.now() - start < duration) {
         // Simula processamento
     }
-}
+} */
 
 // ===== CENÁRIO 1: USER CRUD =====
 fastify.get('/api/fastify/user_crud', async (request: any, reply) => {
@@ -108,6 +108,7 @@ fastify.get('/api/fastify/user_crud', async (request: any, reply) => {
             timestamp: new Date().toISOString()
         };
     } catch (error: any) {
+        console.error(error)
         reply.status(500).send({
             error: 'Erro ao buscar usuários',
             details: error.message
@@ -126,8 +127,8 @@ fastify.post('/api/fastify/user_crud', async (request: any, reply) => {
         }
 
         // Simula validações e processamento
-        simulateProcessing(5);
-
+/*         simulateProcessing(5);
+ */
         const user = await prisma.user.create({
             data: {
                 email: userData.email,
@@ -150,6 +151,7 @@ fastify.post('/api/fastify/user_crud', async (request: any, reply) => {
             message: 'Usuário criado com sucesso'
         });
     } catch (error: any) {
+        console.error(error)
         if (error.code === 'P2002') {
             return reply.status(409).send({
                 error: 'Email já está em uso'
@@ -184,6 +186,7 @@ fastify.get('/api/fastify/file_upload', async (request, reply) => {
             count: files.length
         };
     } catch (error: any) {
+        console.error(error)
         reply.status(500).send({
             error: 'Erro ao buscar arquivos',
             details: error.message
@@ -202,8 +205,8 @@ fastify.post('/api/fastify/file_upload', async (request: any, reply) => {
         }
 
         // Simula processamento de upload (operação mais pesada)
-        simulateProcessing(15);
-
+/*         simulateProcessing(15);
+ */
         // Cria usuário padrão se não existir
         let user = await prisma.user.findFirst();
         if (!user) {
@@ -253,6 +256,7 @@ fastify.post('/api/fastify/file_upload', async (request: any, reply) => {
             message: 'Arquivo enviado com sucesso'
         });
     } catch (error: any) {
+        console.error(error)
         reply.status(500).send({
             error: 'Erro ao enviar arquivo',
             details: error.message
@@ -272,8 +276,8 @@ fastify.get('/api/fastify/analytics_processing', async (request, reply) => {
         });
 
         // Simula processamento analítico pesado
-        simulateProcessing(25);
-
+/*         simulateProcessing(25);
+ */
         const processedData = analytics.map((item: any) => {
             const events = JSON.parse(item.events || '[]');
             const userProps = JSON.parse(item.userProps || '{}');
@@ -299,6 +303,7 @@ fastify.get('/api/fastify/analytics_processing', async (request, reply) => {
             }
         };
     } catch (error: any) {
+        console.error(error)
         reply.status(500).send({
             error: 'Erro ao processar analytics',
             details: error.message
@@ -317,8 +322,8 @@ fastify.post('/api/fastify/analytics_processing', async (request: any, reply) =>
         }
 
         // Simula processamento pesado de analytics
-        simulateProcessing(30);
-
+/*         simulateProcessing(30);
+ */
         let userId = null;
         if (request.user) {
             let user = await prisma.user.findFirst({ where: { email: request.user.email } });
@@ -352,6 +357,7 @@ fastify.post('/api/fastify/analytics_processing', async (request: any, reply) =>
             message: 'Analytics processado com sucesso'
         });
     } catch (error: any) {
+        console.error(error)
         reply.status(500).send({
             error: 'Erro ao processar analytics',
             details: error.message
@@ -379,8 +385,8 @@ fastify.get('/api/fastify/product_catalog', async (request: any, reply) => {
 
                     if (pattern === 'burst') {
                         // Em picos de tráfego, simula busca mais pesada
-                        simulateProcessing(20);
-                    }
+/*                         simulateProcessing(20);
+ */                    }
                 }
             } catch (e) {
                 // Query inválida
@@ -408,6 +414,7 @@ fastify.get('/api/fastify/product_catalog', async (request: any, reply) => {
             }
         };
     } catch (error: any) {
+        console.error(error)
         reply.status(500).send({
             error: 'Erro ao buscar produtos',
             details: error.message
@@ -420,8 +427,8 @@ fastify.post('/api/fastify/product_catalog', async (request: any, reply) => {
         const { filters = {}, pagination = {}, searchTerm } = request.body;
 
         // Simula busca complexa com filtros
-        simulateProcessing(10);
-
+/*         simulateProcessing(10);
+ */
         const where: any = {};
 
         if (filters.category) {
@@ -472,6 +479,7 @@ fastify.post('/api/fastify/product_catalog', async (request: any, reply) => {
             }
         };
     } catch (error: any) {
+        console.error(error)
         reply.status(500).send({
             error: 'Erro na busca de produtos',
             details: error.message
@@ -494,8 +502,8 @@ fastify.get('/api/fastify/real_time_data', async (request, reply) => {
         });
 
         // Simula agregação de dados em tempo real
-        simulateProcessing(5);
-
+/*         simulateProcessing(5);
+ */
         const processedSensors = sensors.map((sensor: any) => ({
             ...sensor,
             latestReading: sensor.readings[0],
@@ -514,6 +522,7 @@ fastify.get('/api/fastify/real_time_data', async (request, reply) => {
             timestamp: new Date().toISOString()
         };
     } catch (error: any) {
+        console.error(error)
         reply.status(500).send({
             error: 'Erro ao buscar dados dos sensores',
             details: error.message
@@ -532,8 +541,8 @@ fastify.post('/api/fastify/real_time_data', async (request: any, reply) => {
         }
 
         // Simula processamento em tempo real
-        simulateProcessing(3);
-
+/*         simulateProcessing(3);
+ */
         const results = await Promise.all(
             sensorsData.slice(0, 20).map(async (sensorData: any) => {
                 // Busca ou cria sensor
@@ -588,6 +597,7 @@ fastify.post('/api/fastify/real_time_data', async (request: any, reply) => {
             message: 'Dados dos sensores processados com sucesso'
         });
     } catch (error: any) {
+        console.error(error)
         reply.status(500).send({
             error: 'Erro ao processar dados dos sensores',
             details: error.message

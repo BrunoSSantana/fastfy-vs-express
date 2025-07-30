@@ -6,9 +6,9 @@ const EXPRESS_BASE_URL = "http://localhost:3001";
 const FASTIFY_BASE_URL = "http://localhost:3002";
 
 // Configurações de teste mais granulares para insights valiosos
-const DURATIONS = [20, 60] as const; // Teste progressivo de sustentabilidade
+const DURATIONS = [5, 30] as const; // Teste progressivo de sustentabilidade
 const CONNECTIONS = [10, 100, 250] as const; // Análise de escalabilidade
-const TEST_VARIANTS = ["basic", "complex"] as const; // Diferentes complexidades
+const TEST_VARIANTS = ["basic"] as const; // Diferentes complexidades
 
 const IMPLEMENTATIONS = [
   { name: "Express", route: "/api/express", baseUrl: EXPRESS_BASE_URL },
@@ -26,43 +26,42 @@ const TEST_SCENARIOS = [
     breakingPoint: 400, // Conexões onde performance degrada
     optimalConnections: 100,
   },
-
-/*  {
-    name: "file_upload",
-    description: "Upload de arquivos",
-    payloadSize: "large" as const,
-    cpuIntensive: false,
-    cacheable: false,
-    breakingPoint: 150,
-    optimalConnections: 50,
-  },
   {
-    name: "analytics_processing",
-    description: "Processamento analítico",
-    payloadSize: "medium" as const,
-    cpuIntensive: true,
-    cacheable: false,
-    breakingPoint: 100,
-    optimalConnections: 25,
-  },
-   {
-    name: "product_catalog",
-    description: "Catálogo de produtos",
-    payloadSize: "medium" as const,
-    cpuIntensive: false,
-    cacheable: true,
-    breakingPoint: 300,
-    optimalConnections: 150,
-  },
-  {
-    name: "real_time_data",
-    description: "Dados em tempo real",
-    payloadSize: "small" as const,
-    cpuIntensive: false,
-    cacheable: false,
-    breakingPoint: 500,
-    optimalConnections: 200,
-  }, */
+      name: "file_upload",
+      description: "Upload de arquivos",
+      payloadSize: "large" as const,
+      cpuIntensive: false,
+      cacheable: false,
+      breakingPoint: 150,
+      optimalConnections: 50,
+    },
+    {
+      name: "analytics_processing",
+      description: "Processamento analítico",
+      payloadSize: "medium" as const,
+      cpuIntensive: true,
+      cacheable: false,
+      breakingPoint: 100,
+      optimalConnections: 25,
+    },
+     {
+      name: "product_catalog",
+      description: "Catálogo de produtos",
+      payloadSize: "medium" as const,
+      cpuIntensive: false,
+      cacheable: true,
+      breakingPoint: 300,
+      optimalConnections: 150,
+    },
+    {
+      name: "real_time_data",
+      description: "Dados em tempo real",
+      payloadSize: "small" as const,
+      cpuIntensive: false,
+      cacheable: false,
+      breakingPoint: 500,
+      optimalConnections: 200,
+    },
 ];
 
 type BenchmarkResult = {
@@ -103,7 +102,7 @@ function generateTestPayload(scenario: string, variant: typeof TEST_VARIANTS[num
           email: faker.internet.email(),
           name: faker.person.fullName(),
           // Complexidade baseada no variant
-          metadata: variant === "heavy" ? generateLargeMetadata(complexity) : {},
+          metadata: {},
           preferences: Array.from({ length: complexity }, () => ({
             key: faker.lorem.word(),
             value: faker.lorem.sentence()
@@ -119,7 +118,7 @@ function generateTestPayload(scenario: string, variant: typeof TEST_VARIANTS[num
           size: faker.number.int({ min: 1024 * complexity, max: 1048576 * complexity }),
           type: faker.helpers.arrayElement(["image/jpeg", "application/pdf", "video/mp4"]),
           checksum: faker.string.hexadecimal({ length: 64 }),
-          chunks: variant === "heavy" ? generateFileChunks(complexity * 10) : []
+          chunks: generateFileChunks(complexity * 10)
         },
       };
 
@@ -135,7 +134,7 @@ function generateTestPayload(scenario: string, variant: typeof TEST_VARIANTS[num
               url: faker.internet.url(),
               value: faker.number.float({ min: 0, max: 1000 }),
               // Dados computacionalmente pesados para heavy
-              computedMetrics: variant === "heavy" ? generateComputedMetrics() : {}
+              computedMetrics: generateComputedMetrics()
             },
           })),
         },
@@ -149,7 +148,7 @@ function generateTestPayload(scenario: string, variant: typeof TEST_VARIANTS[num
           priceRange: { min: 0, max: 1000 },
           // Filtros complexos para variants avançados
           advancedFilters: variant !== "basic" ? generateAdvancedFilters(complexity) : {},
-          aggregations: variant === "heavy" ? ["count", "avg", "min", "max", "groupBy"] : ["count"]
+          aggregations: ["count", "avg", "min", "max", "groupBy"]
         },
       };
 
@@ -165,7 +164,7 @@ function generateTestPayload(scenario: string, variant: typeof TEST_VARIANTS[num
             lng: faker.location.longitude(),
           },
           // Dados de telemetria complexos para heavy
-          telemetry: variant === "heavy" ? generateTelemetryData() : {}
+          telemetry: generateTelemetryData()
         })),
       };
 
