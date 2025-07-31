@@ -98,35 +98,4 @@ model Product {
   @@map("products")
 }
 
-// Modelo para cenário real_time_data (IoT/sensores)
-model Sensor {
-  id               String   @id @default(uuid())
-  type             String   // temperature, humidity, pressure, etc.
-  value            Float
-  unit             String
-  latitude         Float?
-  longitude        Float?
-  batteryLevel     Int      @default(100)
-  lastMaintenance  DateTime
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  // Relacionamentos
-  readings SensorReading[]
-
-  @@map("sensors")
-}
-
-model SensorReading {
-  id        String   @id @default(uuid())
-  sensorId  String
-  value     Float
-  timestamp DateTime @default(now())
-  metadata  String?  // JSON para dados extras
-
-  // Relacionamentos
-  sensor Sensor @relation(fields: [sensorId], references: [id], onDelete: Cascade)
-
-  @@map("sensor_readings")
-} 
+ 
