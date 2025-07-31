@@ -27,41 +27,33 @@ const TEST_SCENARIOS = [
     optimalConnections: 100,
   },
   {
-      name: "file_upload",
-      description: "Upload de arquivos",
-      payloadSize: "large" as const,
-      cpuIntensive: false,
-      cacheable: false,
-      breakingPoint: 150,
-      optimalConnections: 50,
-    },
-    {
-      name: "analytics_processing",
-      description: "Processamento analítico",
-      payloadSize: "medium" as const,
-      cpuIntensive: true,
-      cacheable: false,
-      breakingPoint: 100,
-      optimalConnections: 25,
-    },
-     {
-      name: "product_catalog",
-      description: "Catálogo de produtos",
-      payloadSize: "medium" as const,
-      cpuIntensive: false,
-      cacheable: true,
-      breakingPoint: 300,
-      optimalConnections: 150,
-    },
-    {
-      name: "real_time_data",
-      description: "Dados em tempo real",
-      payloadSize: "small" as const,
-      cpuIntensive: false,
-      cacheable: false,
-      breakingPoint: 500,
-      optimalConnections: 200,
-    },
+    name: "file_upload",
+    description: "Upload de arquivos",
+    payloadSize: "large" as const,
+    cpuIntensive: false,
+    cacheable: false,
+    breakingPoint: 150,
+    optimalConnections: 50,
+  },
+  {
+    name: "analytics_processing",
+    description: "Processamento analítico",
+    payloadSize: "medium" as const,
+    cpuIntensive: true,
+    cacheable: false,
+    breakingPoint: 100,
+    optimalConnections: 25,
+  },
+  {
+    name: "product_catalog",
+    description: "Catálogo de produtos",
+    payloadSize: "medium" as const,
+    cpuIntensive: true,
+    cacheable: true,
+    breakingPoint: 180,
+    optimalConnections: 80,
+  },
+
 ];
 
 type BenchmarkResult = {
@@ -143,30 +135,18 @@ function generateTestPayload(scenario: string, variant: typeof TEST_VARIANTS[num
     case "product_catalog":
       return {
         ...baseData,
-        filters: {
-          category: faker.helpers.arrayElement(["electronics", "clothing", "books"]),
-          priceRange: { min: 0, max: 1000 },
-          // Filtros complexos para variants avançados
-          advancedFilters: variant !== "basic" ? generateAdvancedFilters(complexity) : {},
-          aggregations: ["count", "avg", "min", "max", "groupBy"]
-        },
+        name: faker.commerce.productName(),
+        description: faker.commerce.productDescription(),
+        price: faker.commerce.price({ min: 10, max: 1000 }),
+        category: faker.helpers.arrayElement(["electronics", "clothing", "books", "home", "sports"]),
+        brand: faker.company.name(),
+        inStock: faker.datatype.boolean(),
+        rating: faker.number.float({ min: 0, max: 5, fractionDigits: 1 }),
+        imageUrl: faker.image.url(),
+        tags: Array.from({ length: complexity }, () => faker.lorem.word())
       };
 
-    case "real_time_data":
-      return {
-        ...baseData,
-        sensors: Array.from({ length: complexity * 5 }, () => ({
-          id: faker.string.uuid(),
-          type: faker.helpers.arrayElement(["temperature", "pressure", "humidity"]),
-          value: faker.number.float({ min: 0, max: 100 }),
-          location: {
-            lat: faker.location.latitude(),
-            lng: faker.location.longitude(),
-          },
-          // Dados de telemetria complexos para heavy
-          telemetry: generateTelemetryData()
-        })),
-      };
+
 
     default:
       return baseData;
@@ -216,18 +196,7 @@ function generateAdvancedFilters(complexity: number) {
   };
 }
 
-function generateTelemetryData() {
-  return {
-    signalStrength: faker.number.int({ min: -100, max: -30 }),
-    batteryVoltage: faker.number.float({ min: 3.0, max: 4.2 }),
-    firmware: faker.system.semver(),
-    diagnostics: {
-      uptime: faker.number.int({ min: 0, max: 86400 }),
-      errors: faker.number.int({ min: 0, max: 10 }),
-      warnings: faker.number.int({ min: 0, max: 5 })
-    }
-  };
-}
+
 
 async function runBenchmark(
   implementation: string,

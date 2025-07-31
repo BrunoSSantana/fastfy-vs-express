@@ -4,15 +4,15 @@ import Fastify from 'fastify';
 import { PrismaClient } from '@prisma/client';
 
 const fastify = Fastify({
-/*     logger: {
-        level: 'info',
-        transport: {
-            target: 'pino-pretty',
-            options: {
-                colorize: true
+    /*     logger: {
+            level: 'info',
+            transport: {
+                target: 'pino-pretty',
+                options: {
+                    colorize: true
+                }
             }
-        }
-    } */
+        } */
 });
 
 const prisma = new PrismaClient()
@@ -98,7 +98,8 @@ fastify.get('/api/fastify/user_crud', async (request: any, reply) => {
             include: {
                 analytics: { take: 5 },
                 fileUploads: { take: 3 }
-            }
+            },
+            take: 50
         });
 
         return {
@@ -126,10 +127,7 @@ fastify.post('/api/fastify/user_crud', async (request: any, reply) => {
             });
         }
 
-        // Simula validações e processamento
-/*         simulateProcessing(5);
- */
-        const user = await prisma.user.create({
+        await prisma.user.create({
             data: {
                 email: userData.email,
                 name: userData.name,
@@ -145,13 +143,9 @@ fastify.post('/api/fastify/user_crud', async (request: any, reply) => {
             }
         });
 
-        reply.status(201).send({
-            success: true,
-            data: user,
-            message: 'Usuário criado com sucesso'
-        });
+
+        reply.status(204).send();
     } catch (error: any) {
-        console.error(error)
         if (error.code === 'P2002') {
             return reply.status(409).send({
                 error: 'Email já está em uso'
@@ -204,10 +198,6 @@ fastify.post('/api/fastify/file_upload', async (request: any, reply) => {
             });
         }
 
-        // Simula processamento de upload (operação mais pesada)
-/*         simulateProcessing(15);
- */
-        // Cria usuário padrão se não existir
         let user = await prisma.user.findFirst();
         if (!user) {
             user = await prisma.user.create({
@@ -247,14 +237,7 @@ fastify.post('/api/fastify/file_upload', async (request: any, reply) => {
             );
         }
 
-        reply.status(201).send({
-            success: true,
-            data: {
-                ...fileUpload,
-                tags: JSON.parse(fileUpload.tags)
-            },
-            message: 'Arquivo enviado com sucesso'
-        });
+        reply.status(204).send();
     } catch (error: any) {
         console.error(error)
         reply.status(500).send({
@@ -275,9 +258,6 @@ fastify.get('/api/fastify/analytics_processing', async (request, reply) => {
             take: 100
         });
 
-        // Simula processamento analítico pesado
-/*         simulateProcessing(25);
- */
         const processedData = analytics.map((item: any) => {
             const events = JSON.parse(item.events || '[]');
             const userProps = JSON.parse(item.userProps || '{}');
@@ -321,9 +301,6 @@ fastify.post('/api/fastify/analytics_processing', async (request: any, reply) =>
             });
         }
 
-        // Simula processamento pesado de analytics
-/*         simulateProcessing(30);
- */
         let userId = null;
         if (request.user) {
             let user = await prisma.user.findFirst({ where: { email: request.user.email } });
@@ -424,186 +401,50 @@ fastify.get('/api/fastify/product_catalog', async (request: any, reply) => {
 
 fastify.post('/api/fastify/product_catalog', async (request: any, reply) => {
     try {
-        const { filters = {}, pagination = {}, searchTerm } = request.body;
+        const {
+            name,
+            description,
+            price,
+            category,
+            brand,
+            inStock = true,
+            rating = 0,
+            imageUrl,
+            tags = []
+        } = request.body;
 
-        // Simula busca complexa com filtros
-/*         simulateProcessing(10);
- */
-        const where: any = {};
-
-        if (filters.category) {
-            where.category = filters.category;
-        }
-
-        if (filters.priceRange) {
-            where.price = {
-                gte: filters.priceRange.min || 0,
-                lte: filters.priceRange.max || 999999
-            };
-        }
-
-        if (filters.brand) {
-            where.brand = { contains: filters.brand };
-        }
-
-        if (filters.inStock !== undefined) {
-            where.inStock = filters.inStock;
-        }
-
-        if (searchTerm) {
-            where.OR = [
-                { name: { contains: searchTerm } },
-                { description: { contains: searchTerm } }
-            ];
-        }
-
-        const products = await prisma.product.findMany({
-            where,
-            take: pagination.limit || 20,
-            skip: ((pagination.page || 1) - 1) * (pagination.limit || 20),
-            orderBy: pagination.sortBy ?
-                { [pagination.sortBy]: pagination.order || 'asc' } :
-                { createdAt: 'desc' }
-        });
-
-        return {
-            success: true,
-            data: products.map((product: any) => ({
-                ...product,
-                tags: JSON.parse(product.tags || '[]')
-            })),
-            filters: filters,
-            pagination: {
-                ...pagination,
-                total: products.length
-            }
-        };
-    } catch (error: any) {
-        console.error(error)
-        reply.status(500).send({
-            error: 'Erro na busca de produtos',
-            details: error.message
-        });
-    }
-});
-
-// ===== CENÁRIO 5: REAL TIME DATA =====
-fastify.get('/api/fastify/real_time_data', async (request, reply) => {
-    try {
-        const sensors = await prisma.sensor.findMany({
-            where: { isActive: true },
-            include: {
-                readings: {
-                    orderBy: { timestamp: 'desc' },
-                    take: 10
-                }
-            },
-            take: 100
-        });
-
-        // Simula agregação de dados em tempo real
-/*         simulateProcessing(5);
- */
-        const processedSensors = sensors.map((sensor: any) => ({
-            ...sensor,
-            latestReading: sensor.readings[0],
-            avgValue: sensor.readings.reduce((sum: number, r: any) => sum + r.value, 0) / (sensor.readings.length || 1),
-            status: sensor.batteryLevel > 20 ? 'online' : 'low_battery'
-        }));
-
-        return {
-            success: true,
-            data: processedSensors,
-            summary: {
-                totalSensors: sensors.length,
-                activeSensors: sensors.filter((s: any) => s.isActive).length,
-                lowBattery: sensors.filter((s: any) => s.batteryLevel <= 20).length
-            },
-            timestamp: new Date().toISOString()
-        };
-    } catch (error: any) {
-        console.error(error)
-        reply.status(500).send({
-            error: 'Erro ao buscar dados dos sensores',
-            details: error.message
-        });
-    }
-});
-
-fastify.post('/api/fastify/real_time_data', async (request: any, reply) => {
-    try {
-        const { sensors: sensorsData = [] } = request.body;
-
-        if (!Array.isArray(sensorsData) || sensorsData.length === 0) {
+        // Validação básica
+        if (!name || !price || !category || !brand) {
             return reply.status(400).send({
-                error: 'Dados dos sensores não fornecidos'
+                error: 'Campos obrigatórios: name, price, category, brand'
             });
         }
 
-        // Simula processamento em tempo real
-/*         simulateProcessing(3);
- */
-        const results = await Promise.all(
-            sensorsData.slice(0, 20).map(async (sensorData: any) => {
-                // Busca ou cria sensor
-                let sensor = await prisma.sensor.findFirst({
-                    where: { type: sensorData.type }
-                });
-
-                if (!sensor) {
-                    sensor = await prisma.sensor.create({
-                        data: {
-                            type: sensorData.type,
-                            value: sensorData.value,
-                            unit: sensorData.unit,
-                            latitude: sensorData.location?.lat,
-                            longitude: sensorData.location?.lng,
-                            batteryLevel: sensorData.batteryLevel || 100,
-                            lastMaintenance: new Date(sensorData.lastMaintenance || Date.now())
-                        }
-                    });
-                } else {
-                    // Atualiza sensor existente
-                    sensor = await prisma.sensor.update({
-                        where: { id: sensor.id },
-                        data: {
-                            value: sensorData.value,
-                            batteryLevel: sensorData.batteryLevel || sensor.batteryLevel,
-                            updatedAt: new Date()
-                        }
-                    });
-                }
-
-                // Cria leitura
-                const reading = await prisma.sensorReading.create({
-                    data: {
-                        sensorId: sensor.id,
-                        value: sensorData.value,
-                        metadata: JSON.stringify({
-                            location: sensorData.location,
-                            rawData: sensorData
-                        })
-                    }
-                });
-
-                return { sensor, reading };
-            })
-        );
-
-        reply.status(201).send({
-            success: true,
-            data: results,
-            processed: results.length,
-            message: 'Dados dos sensores processados com sucesso'
+        await prisma.product.create({
+            data: {
+                name,
+                description,
+                price: parseFloat(price),
+                category,
+                brand,
+                inStock: Boolean(inStock),
+                rating: parseFloat(rating) || 0,
+                imageUrl,
+                tags: JSON.stringify(tags)
+            }
         });
+
+        reply.status(204).send();
     } catch (error: any) {
-        console.error(error)
+        console.error(error);
         reply.status(500).send({
-            error: 'Erro ao processar dados dos sensores',
+            error: 'Erro ao criar produto',
             details: error.message
         });
     }
 });
+
+
 
 // Health check
 fastify.get('/health', async (request, reply) => {

@@ -72,7 +72,8 @@ app.get('/api/express/user_crud', async (req, res) => {
             include: {
                 analytics: { take: 5 },
                 fileUploads: { take: 3 }
-            }
+            },
+            take: 50
         });
 
         res.json({
@@ -99,10 +100,7 @@ app.post('/api/express/user_crud', async (req, res) => {
             });
         }
 
-        // Simula validações e processamento
-/*         simulateProcessing(5);
- */
-        const user = await prisma.user.create({
+        await prisma.user.create({
             data: {
                 email: userData.email,
                 name: userData.name,
@@ -118,11 +116,7 @@ app.post('/api/express/user_crud', async (req, res) => {
             }
         });
 
-        res.status(201).json({
-            success: true,
-            data: user,
-            message: 'Usuário criado com sucesso'
-        });
+        res.status(204).send();
     } catch (error: any) {
         console.log(error)
         if (error.code === 'P2002') {
@@ -176,10 +170,6 @@ app.post('/api/express/file_upload', async (req, res) => {
             });
         }
 
-        // Simula processamento de upload (operação mais pesada)
-/*         simulateProcessing(15);
- */
-        // Cria usuário padrão se não existir
         let user = await prisma.user.findFirst();
         if (!user) {
             user = await prisma.user.create({
@@ -219,14 +209,7 @@ app.post('/api/express/file_upload', async (req, res) => {
             );
         }
 
-        res.status(201).json({
-            success: true,
-            data: {
-                ...fileUpload,
-                tags: JSON.parse(fileUpload.tags)
-            },
-            message: 'Arquivo enviado com sucesso'
-        });
+        res.status(204).send();
     } catch (error: any) {
         res.status(500).json({
             error: 'Erro ao enviar arquivo',
@@ -246,9 +229,6 @@ app.get('/api/express/analytics_processing', async (req, res) => {
             take: 100
         });
 
-        // Simula processamento analítico pesado
-/*         simulateProcessing(25);
- */
         const processedData = analytics.map((item: any) => {
             const events = JSON.parse(item.events || '[]');
             const userProps = JSON.parse(item.userProps || '{}');
@@ -292,8 +272,8 @@ app.post('/api/express/analytics_processing', async (req, res) => {
         }
 
         // Simula processamento pesado de analytics
-/*         simulateProcessing(30);
- */
+        /*         simulateProcessing(30);
+         */
         let userId = null;
         if (req.user) {
             let user = await prisma.user.findFirst({ where: { email: req.user.email } });
@@ -392,183 +372,49 @@ app.get('/api/express/product_catalog', async (req, res) => {
 
 app.post('/api/express/product_catalog', async (req, res) => {
     try {
-        const { filters = {}, pagination = {}, searchTerm } = req.body;
+        const {
+            name,
+            description,
+            price,
+            category,
+            brand,
+            inStock = true,
+            rating = 0,
+            imageUrl,
+            tags = []
+        } = req.body;
 
-        // Simula busca complexa com filtros
-/*         simulateProcessing(10);
- */
-        const where: any = {};
-
-        if (filters.category) {
-            where.category = filters.category;
-        }
-
-        if (filters.priceRange) {
-            where.price = {
-                gte: filters.priceRange.min || 0,
-                lte: filters.priceRange.max || 999999
-            };
-        }
-
-        if (filters.brand) {
-            where.brand = { contains: filters.brand };
-        }
-
-        if (filters.inStock !== undefined) {
-            where.inStock = filters.inStock;
-        }
-
-        if (searchTerm) {
-            where.OR = [
-                { name: { contains: searchTerm } },
-                { description: { contains: searchTerm } }
-            ];
-        }
-
-        const products = await prisma.product.findMany({
-            where,
-            take: pagination.limit || 20,
-            skip: ((pagination.page || 1) - 1) * (pagination.limit || 20),
-            orderBy: pagination.sortBy ?
-                { [pagination.sortBy]: pagination.order || 'asc' } :
-                { createdAt: 'desc' }
-        });
-
-        res.json({
-            success: true,
-            data: products.map(product => ({
-                ...product,
-                tags: JSON.parse(product.tags || '[]')
-            })),
-            filters: filters,
-            pagination: {
-                ...pagination,
-                total: products.length
-            }
-        });
-    } catch (error: any) {
-        res.status(500).json({
-            error: 'Erro na busca de produtos',
-            details: error.message
-        });
-    }
-});
-
-// ===== CENÁRIO 5: REAL TIME DATA =====
-app.get('/api/express/real_time_data', async (req, res) => {
-    try {
-        const sensors = await prisma.sensor.findMany({
-            where: { isActive: true },
-            include: {
-                readings: {
-                    orderBy: { timestamp: 'desc' },
-                    take: 10
-                }
-            },
-            take: 100
-        });
-
-        // Simula agregação de dados em tempo real
-/*         simulateProcessing(5);
- */
-        const processedSensors = sensors.map(sensor => ({
-            ...sensor,
-            latestReading: sensor.readings[0],
-            avgValue: sensor.readings.reduce((sum, r) => sum + r.value, 0) / (sensor.readings.length || 1),
-            status: sensor.batteryLevel > 20 ? 'online' : 'low_battery'
-        }));
-
-        res.json({
-            success: true,
-            data: processedSensors,
-            summary: {
-                totalSensors: sensors.length,
-                activeSensors: sensors.filter(s => s.isActive).length,
-                lowBattery: sensors.filter(s => s.batteryLevel <= 20).length
-            },
-            timestamp: new Date().toISOString()
-        });
-    } catch (error: any) {
-        res.status(500).json({
-            error: 'Erro ao buscar dados dos sensores',
-            details: error.message
-        });
-    }
-});
-
-app.post('/api/express/real_time_data', async (req, res) => {
-    try {
-        const { sensors: sensorsData = [] } = req.body;
-
-        if (!Array.isArray(sensorsData) || sensorsData.length === 0) {
+        // Validação básica
+        if (!name || !price || !category || !brand) {
             return res.status(400).json({
-                error: 'Dados dos sensores não fornecidos'
+                error: 'Campos obrigatórios: name, price, category, brand'
             });
         }
 
-        // Simula processamento em tempo real
-/*         simulateProcessing(3);
- */
-        const results = await Promise.all(
-            sensorsData.slice(0, 20).map(async (sensorData: any) => {
-                // Busca ou cria sensor
-                let sensor = await prisma.sensor.findFirst({
-                    where: { type: sensorData.type }
-                });
-
-                if (!sensor) {
-                    sensor = await prisma.sensor.create({
-                        data: {
-                            type: sensorData.type,
-                            value: sensorData.value,
-                            unit: sensorData.unit,
-                            latitude: sensorData.location?.lat,
-                            longitude: sensorData.location?.lng,
-                            batteryLevel: sensorData.batteryLevel || 100,
-                            lastMaintenance: new Date(sensorData.lastMaintenance || Date.now())
-                        }
-                    });
-                } else {
-                    // Atualiza sensor existente
-                    sensor = await prisma.sensor.update({
-                        where: { id: sensor.id },
-                        data: {
-                            value: sensorData.value,
-                            batteryLevel: sensorData.batteryLevel || sensor.batteryLevel,
-                            updatedAt: new Date()
-                        }
-                    });
-                }
-
-                // Cria leitura
-                const reading = await prisma.sensorReading.create({
-                    data: {
-                        sensorId: sensor.id,
-                        value: sensorData.value,
-                        metadata: JSON.stringify({
-                            location: sensorData.location,
-                            rawData: sensorData
-                        })
-                    }
-                });
-
-                return { sensor, reading };
-            })
-        );
-
-        res.status(201).json({
-            success: true,
-            data: results,
-            processed: results.length,
-            message: 'Dados dos sensores processados com sucesso'
+        await prisma.product.create({
+            data: {
+                name,
+                description,
+                price: parseFloat(price),
+                category,
+                brand,
+                inStock: Boolean(inStock),
+                rating: parseFloat(rating) || 0,
+                imageUrl,
+                tags: JSON.stringify(tags)
+            }
         });
+
+        res.status(204).send();
     } catch (error: any) {
         res.status(500).json({
-            error: 'Erro ao processar dados dos sensores',
+            error: 'Erro ao criar produto',
             details: error.message
         });
     }
 });
+
+
 
 // Health check
 app.get('/health', (req, res) => {
